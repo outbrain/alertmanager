@@ -16,9 +16,8 @@ package provider
 import (
 	"sync"
 
-	"github.com/prometheus/common/model"
-
 	"github.com/prometheus/alertmanager/types"
+	"github.com/prometheus/common/model"
 )
 
 // MemData contains the data backing MemAlerts and MemNotifies.
@@ -283,6 +282,10 @@ func (s *MemSilences) Set(sil *types.Silence) (uint64, error) {
 		if _, ok := s.silences[sil.ID]; !ok {
 			return 0, ErrNotFound
 		}
+		// This emulates the behavior of the sqlite implementation.
+		// The api / ui expects an incremented ID (as it also calls a 'delete(id)'
+		// on the original Silence id on edits.
+		sil.ID += 1
 	}
 
 	s.silences[sil.ID] = &sil.Silence
@@ -293,7 +296,6 @@ func (s *MemSilences) Set(sil *types.Silence) (uint64, error) {
 func (s *MemSilences) Del(id uint64) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-
 	delete(s.silences, id)
 	return nil
 }
