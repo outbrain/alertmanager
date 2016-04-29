@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	pretty.CompareConfig.IncludeUnexported = false
+	pretty.CompareConfig.IncludeUnexported = true
 }
 
 func TestNotifiesSet(t *testing.T) {
@@ -102,6 +102,63 @@ func TestNotifiesSet(t *testing.T) {
 				t.Errorf("Unexpected query result")
 				t.Fatalf(pretty.Compare(res, q.expected))
 			}
+		}
+	}
+}
+
+func TestSilencesSet(t *testing.T) {
+	var (
+		t0 = time.Now()
+		t1 = t0.Add(10 * time.Minute)
+		t2 = t0.Add(20 * time.Minute)
+		// t3 = t0.Add(30 * time.Minute)
+	)
+
+	var cases = []struct {
+		insert *types.Silence
+	}{
+		{
+			insert: &types.Silence{
+				Matchers: []*types.Matcher{
+					{Name: "key", Value: "val"},
+				},
+				Silence: model.Silence{
+					StartsAt:  t0,
+					EndsAt:    t2,
+					CreatedAt: t1,
+					CreatedBy: "user",
+					Comment:   "test comment",
+				},
+			},
+		},
+	}
+
+	dir, err := ioutil.TempDir("", "silences_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	silences, err := NewSilences(dir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, c := range cases {
+		uid, err := silences.Set(c.insert)
+		if err != nil {
+			t.Fatalf("Insert failed: %s", err)
+		}
+		c.insert.ID = uid
+
+		sil, err := silences.Get(uid)
+		if err != nil {
+			t.Fatalf("Getting failed: %s", err)
+		}
+
+		if !reflect.DeepEqual(sil, c.insert) {
+			t.Errorf("Unexpected silence")
+			t.Error(sil)
+			t.Fatalf(pretty.Compare(sil, c.insert))
 		}
 	}
 }
