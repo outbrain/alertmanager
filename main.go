@@ -96,15 +96,15 @@ func main() {
 	marker := types.NewMarker()
 
 	memData := provider.NewMemData()
-	alerts := provider.NewMemAlerts(memData) //    sqlite.NewAlerts(db)
+	alerts := provider.NewMemAlerts(memData)
 	if err != nil {
 		log.Fatal(err)
 	}
-	notifies := provider.NewMemNotifies(memData) //sqlite.NewNotifies(db)
+	notifies := provider.NewMemNotifies(memData)
 	if err != nil {
 		log.Fatal(err)
 	}
-	silences := provider.NewMemSilences() //sqlite.NewSilences(db, marker)
+	silences := provider.NewMemSilences()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -127,7 +127,6 @@ func main() {
 		)
 		for name, fo := range fanouts {
 			for i, n := range fo {
-				fmt.Printf("%s\n", n)
 				n = notify.Retry(n)
 				n = notify.Log(n, log.With("step", "retry"))
 				n = notify.Dedup(notifies, n)
