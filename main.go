@@ -23,7 +23,6 @@ import (
 	"github.com/prometheus/common/route"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
@@ -78,10 +77,6 @@ func main() {
 	if *showVersion {
 		os.Exit(0)
 	}
-
-	go func() {
-		log.Infoln(http.ListenAndServe("localhost:6060", nil))
-	}()
 
 	err := os.MkdirAll(*dataDir, 0777)
 	if err != nil {
