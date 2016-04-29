@@ -159,9 +159,12 @@ func (a *MemAlerts) Put(alerts ...*types.Alert) error {
 	for _, alert := range alerts {
 		fp := alert.Fingerprint()
 
-		// Merge the alert with the existant one.
+		// Merge the alert with the existing one.
 		if old, ok := a.data.alerts[fp]; ok {
-			alert = old.Merge(alert)
+			if (alert.EndsAt.Sub(old.StartsAt) > 0 && alert.EndsAt.Sub(old.EndsAt) < 0) ||
+				(alert.StartsAt.Sub(old.StartsAt) > 0 && alert.StartsAt.Sub(old.EndsAt) < 0) {
+				alert = old.Merge(alert)
+			}
 		}
 
 		a.data.alerts[fp] = alert

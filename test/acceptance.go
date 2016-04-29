@@ -253,7 +253,6 @@ func (am *Alertmanager) Start() {
 	if err := am.cmd.Start(); err != nil {
 		am.t.Fatalf("Starting alertmanager failed: %s", err)
 	}
-
 	go func() {
 		if err := am.cmd.Wait(); err != nil {
 			am.errc <- err
