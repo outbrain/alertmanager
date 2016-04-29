@@ -119,18 +119,16 @@ func TestSilencesSet(t *testing.T) {
 		insert *types.Silence
 	}{
 		{
-			insert: &types.Silence{
-				Matchers: []*types.Matcher{
+			insert: types.NewSilence(&model.Silence{
+				Matchers: []*model.Matcher{
 					{Name: "key", Value: "val"},
 				},
-				Silence: model.Silence{
-					StartsAt:  t0,
-					EndsAt:    t2,
-					CreatedAt: t1,
-					CreatedBy: "user",
-					Comment:   "test comment",
-				},
-			},
+				StartsAt:  t0,
+				EndsAt:    t2,
+				CreatedAt: t1,
+				CreatedBy: "user",
+				Comment:   "test comment",
+			}),
 		},
 	}
 
@@ -156,9 +154,10 @@ func TestSilencesSet(t *testing.T) {
 			t.Fatalf("Getting failed: %s", err)
 		}
 
-		if !reflect.DeepEqual(sil, c.insert) {
+		// Use pretty.Compare instead of reflect.DeepEqual because it
+		// falsely evaluates to false.
+		if len(pretty.Compare(sil, c.insert)) > 0 {
 			t.Errorf("Unexpected silence")
-			t.Error(sil)
 			t.Fatalf(pretty.Compare(sil, c.insert))
 		}
 	}

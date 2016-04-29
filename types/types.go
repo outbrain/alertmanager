@@ -210,7 +210,7 @@ type Silence struct {
 
 	// A set of matchers determining if an alert is affected
 	// by the silence.
-	Matchers Matchers
+	Matchers Matchers `json:"-"`
 
 	// timeFunc provides the time against which to evaluate
 	// the silence.

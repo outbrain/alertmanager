@@ -96,11 +96,11 @@ func (s *Silences) Set(sil *types.Silence) (uint64, error) {
 		k := make([]byte, 8)
 		binary.BigEndian.PutUint64(k, uid)
 
-		mb, err := json.Marshal(sil)
+		msb, err := json.Marshal(sil.Silence)
 		if err != nil {
 			return err
 		}
-		return b.Put(k, mb)
+		return b.Put(k, msb)
 	})
 	return uid, err
 }
@@ -120,7 +120,7 @@ func (s *Silences) Del(uid uint64) error {
 
 // Get a silence associated with a fingerprint.
 func (s *Silences) Get(uid uint64) (*types.Silence, error) {
-	var sil types.Silence
+	var sil *types.Silence
 
 	err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bktSilences)
@@ -132,10 +132,16 @@ func (s *Silences) Get(uid uint64) (*types.Silence, error) {
 		if v == nil {
 			return provider.ErrNotFound
 		}
+		var ms model.Silence
 
-		return json.Unmarshal(v, &sil)
+		if err := json.Unmarshal(v, &ms); err != nil {
+			return err
+		}
+		sil = types.NewSilence(&ms)
+
+		return nil
 	})
-	return &sil, err
+	return sil, err
 }
 
 // Notifies provides information about pending and successful
