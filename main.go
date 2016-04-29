@@ -18,8 +18,12 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/log"
+	"github.com/prometheus/common/route"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
@@ -30,13 +34,10 @@ import (
 	tmpltext "text/template"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
-	"github.com/prometheus/common/route"
-
 	"github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/alertmanager/notify"
-	"github.com/prometheus/alertmanager/provider/sqlite"
+	"github.com/prometheus/alertmanager/provider"
+	_ "github.com/prometheus/alertmanager/provider/sqlite"
 	"github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/alertmanager/types"
 	"github.com/prometheus/alertmanager/version"
@@ -78,6 +79,10 @@ func main() {
 		os.Exit(0)
 	}
 
+	go func() {
+		log.Infoln(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	err := os.MkdirAll(*dataDir, 0777)
 	if err != nil {
 		log.Fatal(err)
@@ -90,15 +95,16 @@ func main() {
 
 	marker := types.NewMarker()
 
-	alerts, err := sqlite.NewAlerts(db)
+	memData := provider.NewMemData()
+	alerts := provider.NewMemAlerts(memData) //    sqlite.NewAlerts(db)
 	if err != nil {
 		log.Fatal(err)
 	}
-	notifies, err := sqlite.NewNotifies(db)
+	notifies := provider.NewMemNotifies(memData) //sqlite.NewNotifies(db)
 	if err != nil {
 		log.Fatal(err)
 	}
-	silences, err := sqlite.NewSilences(db, marker)
+	silences := provider.NewMemSilences() //sqlite.NewSilences(db, marker)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -121,6 +127,7 @@ func main() {
 		)
 		for name, fo := range fanouts {
 			for i, n := range fo {
+				fmt.Printf("%s\n", n)
 				n = notify.Retry(n)
 				n = notify.Log(n, log.With("step", "retry"))
 				n = notify.Dedup(notifies, n)
